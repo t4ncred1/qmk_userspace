@@ -25,6 +25,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#define QUICK_TAP_TERM 0
 //#define TAPPING_TERM 100
 
+// Ctrl/Esc mod-tap: a key pressed and released while it is held counts as
+// Ctrl+key even within the tapping term, so fast Ctrl+C doesn't become Esc, C.
+#define PERMISSIVE_HOLD
+
+// Raise tap/hold tuning, see get_hold_on_other_key_press() and
+// get_quick_tap_term() in keymap.c.
+#define HOLD_ON_OTHER_KEY_PRESS_PER_KEY
+#define QUICK_TAP_TERM_PER_KEY
+
+// An AltGr armed by tapping Raise expires after 1 s if no key follows.
+#define ONESHOT_TIMEOUT 1000
+
 #ifdef RGBLIGHT_ENABLE
     #define RGBLIGHT_EFFECT_BREATHING
     #define RGBLIGHT_EFFECT_RAINBOW_MOOD
