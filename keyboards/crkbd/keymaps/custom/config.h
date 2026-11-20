@@ -25,11 +25,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //#define QUICK_TAP_TERM 0
 //#define TAPPING_TERM 100
 
-// Ctrl/Esc mod-tap: a key pressed and released while it is held counts as
-// Ctrl+key even within the tapping term, so fast Ctrl+C doesn't become Esc, C.
+// Default for tap-hold keys: a key pressed and released while one is held
+// counts as a hold even within the tapping term. Ctrl/Esc and Raise go
+// further, see get_hold_on_other_key_press() in keymap.c.
 #define PERMISSIVE_HOLD
 
-// Raise tap/hold tuning, see get_hold_on_other_key_press() and
+// Per-key tap/hold tuning, see get_hold_on_other_key_press() and
 // get_quick_tap_term() in keymap.c.
 #define HOLD_ON_OTHER_KEY_PRESS_PER_KEY
 #define QUICK_TAP_TERM_PER_KEY
@@ -58,3 +59,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Pro Micro clones back-feed VCC from the TRRS link into VBUS, making the
 // slave half wrongly think it is the master.
 #define SPLIT_USB_DETECT
+
+// The only OLED is on the right (slave) half: sync what it displays from
+// the left half, and its activity so the screen times out correctly.
+#define SPLIT_LAYER_STATE_ENABLE
+#define SPLIT_MODS_ENABLE
+#define SPLIT_LED_STATE_ENABLE
+#define SPLIT_WPM_ENABLE
+#define SPLIT_ACTIVITY_ENABLE

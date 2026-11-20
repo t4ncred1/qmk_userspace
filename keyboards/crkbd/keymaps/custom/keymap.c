@@ -147,10 +147,17 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     return true;
 }
 
-// Raise counts as held as soon as another key goes down, so a fast roll
-// (Raise down, è down, Raise up) never becomes a tap that arms AltGr.
+// These count as held as soon as another key goes down, however fast the
+// roll: Ctrl/Esc + Space is always Ctrl+Space, never Esc then Space, and a
+// fast Raise + è roll never becomes a tap that arms AltGr.
 bool get_hold_on_other_key_press(uint16_t keycode, keyrecord_t *record) {
-    return keycode == RAISE;
+    switch (keycode) {
+        case CTL_ESC:
+        case RAISE:
+            return true;
+        default:
+            return false;
+    }
 }
 
 // Tap Raise, then hold it straight away: that must be a layer hold, not a
