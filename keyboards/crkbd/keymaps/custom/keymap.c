@@ -44,7 +44,9 @@ enum layers {
     _ADJUST,
 };
 
-#define LOWER MO(_LOWER)
+// Hold = Lower layer. Tap right after tapping Raise (while its AltGr is
+// armed) = toggle Adjust on or off; a plain tap does nothing.
+#define LOWER LT(_LOWER, KC_NO)
 // Hold = Raise layer, tap = arm AltGr for the next key (one-shot), so the
 // AltGr characters stay where the Italian layout has them while the left
 // thumb is a real Alt. The tap is intercepted in process_record_user().
@@ -68,6 +70,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      *                             | Alt  | GUI  | Spc  |      | Ent  |Lower |Raise |
      *                                                                        tap: AltGr
      *                                                                   for the next key
+     *                                            tap Raise, then tap Lower: toggle Adjust
      *                             `--------------------'      `--------------------'
      */
     [_BASE] = LAYOUT_split_3x6_3(
@@ -116,7 +119,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     /*
-     * Adjust (Lower + Raise): firmware, OLED and media.
+     * Adjust: hold Lower + Raise for one-off keys, or tap Raise then Lower to
+     * toggle it on (and the same again to toggle it off). Firmware, OLED, media.
      * ,-----------------------------------------.                    ,-----------------------------------------.
      * | Boot |      |      |      |      |      |                    |      |      |      |      |      |      |
      * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
@@ -148,6 +152,16 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 return false;
             }
             break;
+        case LOWER:
+            if (record->tap.count && record->event.pressed) {
+                // Raise tapped just before: use up its AltGr, toggle Adjust.
+                if (get_oneshot_mods() & MOD_BIT(KC_RALT)) {
+                    del_oneshot_mods(MOD_BIT(KC_RALT));
+                    layer_invert(_ADJUST);
+                }
+                return false;
+            }
+            break;
         case OLED_TG:
             if (record->event.pressed) {
                 oled_user_toggle();
@@ -158,11 +172,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 // These count as held as soon as another key goes down, however fast the
-// roll: Ctrl/Esc + Space is always Ctrl+Space, never Esc then Space, and a
-// fast Raise + è roll never becomes a tap that arms AltGr.
+// roll: Ctrl/Esc + Space is always Ctrl+Space, never Esc then Space, a fast
+// Raise + è roll never becomes a tap that arms AltGr, and Lower + 1 never
+// becomes a tap of Lower.
 bool get_hold_on_other_key_press(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case CTL_ESC:
+        case LOWER:
         case RAISE:
             return true;
         default:
@@ -170,11 +186,15 @@ bool get_hold_on_other_key_press(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
-// Tap Raise, then hold it straight away: that must be a layer hold, not a
-// repeated tap (which would cancel the AltGr just armed).
+// Tap Raise or Lower, then hold it straight away: that must be a layer
+// hold, not a repeated tap (which would cancel the AltGr just armed or
+// toggle Adjust).
 uint16_t get_quick_tap_term(uint16_t keycode, keyrecord_t *record) {
-    if (keycode == RAISE) {
-        return 0;
+    switch (keycode) {
+        case LOWER:
+        case RAISE:
+            return 0;
+        default:
+            return QUICK_TAP_TERM;
     }
-    return QUICK_TAP_TERM;
 }
