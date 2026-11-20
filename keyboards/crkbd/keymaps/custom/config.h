@@ -71,3 +71,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Custom message carrying the OLED on/off toggle to the right half, see
 // oled.c.
 #define SPLIT_TRANSACTION_IDS_USER USER_SYNC_OLED
+
+// OLED: dimmer than the default 255, and off after 30 s without typing
+// (default 60 s).
+#define OLED_BRIGHTNESS 100
+#define OLED_TIMEOUT 30000
