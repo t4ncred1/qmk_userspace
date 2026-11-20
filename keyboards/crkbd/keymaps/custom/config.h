@@ -67,3 +67,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define SPLIT_LED_STATE_ENABLE
 #define SPLIT_WPM_ENABLE
 #define SPLIT_ACTIVITY_ENABLE
+
+// Custom message carrying the OLED on/off toggle to the right half, see
+// oled.c.
+#define SPLIT_TRANSACTION_IDS_USER USER_SYNC_OLED

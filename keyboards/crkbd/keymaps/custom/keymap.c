@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include QMK_KEYBOARD_H
 #include "keymap_italian.h"
+#include "oled.h"
 
 // Not printed on Italian keycaps; Linux xkb "it" puts them on AltGr.
 #ifndef IT_GRV
@@ -49,6 +50,10 @@ enum layers {
 // thumb is a real Alt. The tap is intercepted in process_record_user().
 #define RAISE LT(_RAISE, KC_NO)
 #define ADJUST MO(_ADJUST)
+
+enum custom_keycodes {
+    OLED_TG = SAFE_RANGE, // Turn the right half's OLED off / on.
+};
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     /*
@@ -111,21 +116,21 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     ),
 
     /*
-     * Adjust (Lower + Raise): firmware, RGB and media.
+     * Adjust (Lower + Raise): firmware, OLED and media.
      * ,-----------------------------------------.                    ,-----------------------------------------.
      * | Boot |      |      |      |      |      |                    |      |      |      |      |      |      |
      * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
-     * |RGBtog| Hue+ | Sat+ | Bri+ |      |      |                    | Prev | Vol- | Vol+ | Next | Mute |      |
+     * | OLED |      |      |      |      |      |                    | Prev | Vol- | Vol+ | Next | Mute |      |
      * |------+------+------+------+------+------|                    |------+------+------+------+------+------|
-     * |RGBnxt| Hue- | Sat- | Bri- |      |      |                    |      |      | Play |      |      |      |
+     * |      |      |      |      |      |      |                    |      |      | Play |      |      |      |
      * `------+------+------+------+------+------+------.      ,------+------+------+------+------+------+------'
      *                             |      |      |      |      |      |(held)|(held)|
      *                             `--------------------'      `--------------------'
      */
     [_ADJUST] = LAYOUT_split_3x6_3(
         QK_BOOT, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,
-        RM_TOGG, RM_HUEU, RM_SATU, RM_VALU, XXXXXXX, XXXXXXX,       KC_MPRV, KC_VOLD, KC_VOLU, KC_MNXT, KC_MUTE, XXXXXXX,
-        RM_NEXT, RM_HUED, RM_SATD, RM_VALD, XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, KC_MPLY, XXXXXXX, XXXXXXX, XXXXXXX,
+        OLED_TG, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,       KC_MPRV, KC_VOLD, KC_VOLU, KC_MNXT, KC_MUTE, XXXXXXX,
+        XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,       XXXXXXX, XXXXXXX, KC_MPLY, XXXXXXX, XXXXXXX, XXXXXXX,
                                    _______, _______, _______,       _______, _______, _______
     ),
 };
@@ -143,6 +148,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
                 return false;
             }
             break;
+        case OLED_TG:
+            if (record->event.pressed) {
+                oled_user_toggle();
+            }
+            return false;
     }
     return true;
 }

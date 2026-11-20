@@ -8,7 +8,49 @@
  */
 
 #include QMK_KEYBOARD_H
+#include "transactions.h"
 #include "bongocat_frames.h"
+#include "oled.h"
+
+// Resend the OLED toggle state this often even when unchanged, so a right
+// half that restarts picks it up again.
+#define OLED_SYNC_INTERVAL_MS 500
+
+// Off/on state set by the OLED_TG key. It lives on the left half, where keys
+// are processed, and is sent to the right half, which has the screen.
+static bool oled_user_enabled = true;
+
+void oled_user_toggle(void) {
+    oled_user_enabled = !oled_user_enabled;
+}
+
+static void oled_sync_slave_handler(uint8_t in_len, const void *in_data, uint8_t out_len, void *out_data) {
+    if (in_len == sizeof(oled_user_enabled)) {
+        oled_user_enabled = *(const bool *)in_data;
+    }
+}
+
+void keyboard_post_init_user(void) {
+    transaction_register_rpc(USER_SYNC_OLED, oled_sync_slave_handler);
+}
+
+void housekeeping_task_user(void) {
+    static bool     last_sent = true;
+    static uint32_t last_sync = 0;
+
+    if (!is_keyboard_master()) {
+        return;
+    }
+
+    if (oled_user_enabled == last_sent && timer_elapsed32(last_sync) < OLED_SYNC_INTERVAL_MS) {
+        return;
+    }
+
+    if (transaction_rpc_send(USER_SYNC_OLED, sizeof(oled_user_enabled), &oled_user_enabled)) {
+        last_sent = oled_user_enabled;
+        last_sync = timer_read32();
+    }
+}
 
 // Below IDLE_WPM the cat idles; from TAP_WPM up it taps.
 #define IDLE_WPM 10
@@ -112,6 +154,23 @@ bool oled_task_user(void) {
     if (is_keyboard_master()) {
         return false;
     }
+
+    // Turned off with the OLED_TG key: stay dark until it is pressed again.
+    // QMK switches the display on at every keypress (its timeout wake-up),
+    // showing whatever is in the buffer, so blank the buffer once: that
+    // wake-up then shows nothing until oled_off() runs again.
+    static bool blanked = false;
+
+    if (!oled_user_enabled) {
+        if (blanked) {
+            oled_off();
+        } else {
+            oled_clear();
+            blanked = true;
+        }
+        return false;
+    }
+    blanked = false;
 
     // Every redraw wakes the display and restarts the driver's timeout, and
     // the idle animation redraws every few hundred ms, so the driver alone
